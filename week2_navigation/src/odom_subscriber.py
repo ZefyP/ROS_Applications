@@ -35,7 +35,7 @@ class OdomSubscriber():
         # Here we print out the values that we're interested in:
         if self.counter > 10:
             self.counter = 0
-            print(f"x = {pos_x:.3f} (m), y = {pos_y:.3f} (m), theta_z = {yaw:.3f} (radians)")
+            print(f"x = {pos_x:.3f} (m), y = {pos_y:.3f} (m), theta_z = {abs(yaw):.3f} (radians)")
         else:
             self.counter += 1
 
