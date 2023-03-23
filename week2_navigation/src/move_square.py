@@ -50,7 +50,7 @@ class Square():
         node_name = "move_square"
         # a flag if this node has just been launched
         self.startup = True
-
+        self.num_squares = 0.0
         # This might be useful in the main_loop() (to switch between 
         # turning and moving forwards)
         self.turn = False
@@ -86,6 +86,12 @@ class Square():
         self.pub.publish(Twist())
         self.ctrl_c = True
 
+    def count_squares(self):
+        self.num_squares += 1/4
+        print(self.num_squares)
+        if self.num_squares > 2:
+            self.shutdownhook()
+
     def main_loop(self):
         current_yaw = 0.0 # init
         current_displacement = 0.0 # init
@@ -119,6 +125,7 @@ class Square():
                     self.turn = True
                     current_displacement = 0.0
                     self.theta_z0 = self.theta_z
+                    self.count_squares()
                   else:
                     # Carry on moving forward
                     self.vel.linear.x = 0.1
