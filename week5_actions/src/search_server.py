@@ -2,6 +2,7 @@
 # search_server.py
 
 # Import the core Python modules for ROS and to implement ROS Actions:
+from soupsieve import closest
 import rospy
 import actionlib
 
@@ -24,7 +25,8 @@ class SearchActionServer():
         "/zefys_search", 
         SearchAction, 
         self.action_server_launcher, 
-        auto_start=True)
+        auto_start=False
+        )
         self.actionserver.start()
 
         # pull in some useful publisher/subscriber functions from the tb3.py module:
@@ -54,7 +56,7 @@ class SearchActionServer():
             if not success:
                 self.result.total_distance_travelled = -1.0
                 self.result.closest_object_angle = -1.0
-                self.result.image_path = -1.0
+                self.result.closest_object_distance = -1.0
                 self.actionserver.set_aborted(self.result)
             return
 
@@ -72,7 +74,7 @@ class SearchActionServer():
         self.closest_object = self.tb3_lidar.min_distance
         self.closest_object_location = self.tb3_lidar.closest_object_position
 
-        ## TODO: set the robot's forward velocity (as specified in the "goal")...
+        ## set the robot's forward velocity (as specified in the "goal")...
         self.vel_controller.set_move_cmd(linear = vel, angular = 0.0)
 
         ## establish a conditional statement so that the  
@@ -84,40 +86,46 @@ class SearchActionServer():
             self.closest_object = self.tb3_lidar.min_distance
             self.closest_object_location = self.tb3_lidar.closest_object_position
 
-            ## TODO: publish a velocity command to make the robot start moving 
-            self.vel_controller
+            ## Publish a velocity command to make the robot start moving 
+            self.vel_controller.publish()
+            
+            # determine how far the robot has travelled so far:
+            self.distance = sqrt(pow(self.posx0 - self.tb3_odom.posx, 2) + pow(self.posy0 - self.tb3_odom.posy, 2))
+            
+            
+            ## update all result parameters every loop:
+            # pythagoras
+            self.result.total_distance_travelled = self.distance
+            
+            self.result.closest_object_angle = self.closest_object_location
+            self.result.closest_object_distance = self.closest_object
+
+
 
             # check if there has been a request to cancel the action mid-way through:
             if self.actionserver.is_preempt_requested():
-                ## TODO: take appropriate action if the action is cancelled (peempted)...
-
-
-
+                ## take appropriate action if the action is cancelled (peempted)...
+                print("Pre-empt requested! Cancelling the search...")
+                self.actionserver.set_preempted(self.result)
+                self.vel_controller.stop()
                 success = False
+                
                 # exit the loop:
                 break
 
-            # determine how far the robot has travelled so far:
-            self.distance = sqrt(pow(self.posx0 - self.tb3_odom.posx, 2) + pow(self.posy0 - self.tb3_odom.posy, 2))
-
-            ## TODO: update all feedback message values and publish a feedback message:
-            self.feedback...
-
-
-
-            ## TODO: update all result parameters:
-            self.result...
-
+            
+            ## update all feedback message values and publish a feedback message:
+            self.feedback.current_distance_travelled = self.distance
+            self.actionserver.publish_feedback(self.feedback)
 
 
             rate.sleep()
 
         if success:
             rospy.loginfo("approach completed successfully.")
-            ## TODO: Set the action server to "succeeded" and stop the robot...
-
-
-
+            ## Set the action server to "succeeded" and stop the robot...
+            self.vel_controller.stop()
+            self.actionserver.set_succeeded(self.result)
 
 if __name__ == '__main__':
     rospy.init_node("search_action_server")
