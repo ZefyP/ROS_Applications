@@ -91,7 +91,8 @@ class SearchActionServer():
             
             # determine how far the robot has travelled so far:
             self.distance = sqrt(pow(self.posx0 - self.tb3_odom.posx, 2) + pow(self.posy0 - self.tb3_odom.posy, 2))
-            
+            print(f"    ***** The answer is = {self.distance()} meters")
+       
             
             ## update all result parameters every loop:
             # pythagoras
